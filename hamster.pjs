@@ -1,8 +1,15 @@
+#ifndef HAMSTER_STACKTRACELIMIT
+#define HAMSTER_STACKTRACELIMIT 10
+#endif
+
 (function(global) {
+
 global.Hamster = {
   onerror: function() {}
 };
-Error.stackTraceLimit = 10;
+
+Error.stackTraceLimit = HAMSTER_STACKTRACELIMIT;
+
 Error.prototype.report = function() {
   if (this.stack) {
     reportError('error.stack', this, normalizeStack(this.stack));
@@ -12,6 +19,7 @@ Error.prototype.report = function() {
     reportError('caller', this, constructStack());
   }
 };
+
 Function.prototype.reportError = function() {
   var fn = this;
   return function() {
@@ -22,6 +30,7 @@ Function.prototype.reportError = function() {
     };
   };
 }
+
 window.onerror = function(message, url, line, column, err) {
   if (err) {
     err.report();
@@ -36,6 +45,7 @@ window.onerror = function(message, url, line, column, err) {
     }, []);
   }
 };
+
 function reportError(type, err, stack) {
   var report = {
     type: type,
@@ -53,6 +63,7 @@ function reportError(type, err, stack) {
     lastCall.l = err.lineNumber;
   if (!lastCall.c)
     lastCall.c = err.columnNumber;
+
   var files = [];
   for (var i = 0; i < stack.length; i++) {
     var stackCall = stack[i];
@@ -66,8 +77,10 @@ function reportError(type, err, stack) {
   report.files = files;
   Hamster.onerror(report);
 }
+
 var kFnNamePattern = /^(?:at ([\w. ]*)(?= \()|([\w. ]*)(?:\(.*\))?@)/;
 var kUrlPattern = /(http.+?):(\d+)(?::(\d+))?(?=\)|$)/;
+
 function normalizeStack(st) {
   var stack = [];
   st = st.split(/\n/);
@@ -93,10 +106,11 @@ function normalizeStack(st) {
   }
   return stack;
 }
+
 function constructStack() {
   var stack = [];
   var fn = constructStack;
-  while ((fn = fn.caller) && stack.length < 10) {
+  while ((fn = fn.caller) && stack.length < HAMSTER_STACKTRACELIMIT) {
     if (fn == Error.prototype.report)
       continue;
     stack.push({
@@ -106,13 +120,16 @@ function constructStack() {
   }
   return stack;
 }
+
 function slice(arr) {
   return Array.prototype.slice.apply(arr);
 }
+
 // IE compatible
 function trim(str) {
   return str.replace(/(^\s+|\s+$)/g, '')
 }
+
 // IE8 compatible
 function indexOf(arr, val) {
   for (var i = 0; i < arr.length; i++)
@@ -120,4 +137,5 @@ function indexOf(arr, val) {
       return i;
   return -1;
 }
+
 })(window);
