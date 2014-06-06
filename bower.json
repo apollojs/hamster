@@ -1,0 +1,20 @@
+{
+  "name": "hamster",
+  "authors": [
+    "Xiaoyi Shi <ashi009@gmail.com>"
+  ],
+  "description": "Hamster works independently, could capture unexpected errors.",
+  "main": "hamster.js",
+  "keywords": [
+    "stack",
+    "error"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
