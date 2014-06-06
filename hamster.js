@@ -1,4 +1,4 @@
-(function(global, undefined) {
+(function(global) {
 
 global.Hamster = {
   onerror: function() {}
