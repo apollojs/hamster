@@ -26,31 +26,35 @@ it with other scripts, as it may not be executed if other script has error.
 <script type="text/javascript" src="scripts/hamster.js">
 ```
 
-Hamster will extend Function and Error prototypes:
-
-### Errro#report()
+### Hamster.report()
 
 Sends error report from an error instance.
 
 ```js
-Error.prototype.report();
-
-// try {
-//   throw new Error();
-// } catch(e) {
-//   e.report();
-// }
+try {
+  throw new Error();
+} catch (e) {
+  Hamster.report(e);
+}
 ```
 
-### Function#reportError()
+### Hamster.capture(fn)
 
 Creates a wrapper function that will catch potential exception, and report it.
 
-```js
-Function.prototype.reportError();
+This is the recommended way to use Hamster.js, as it will capture as much data
+as possible on old browsers.
 
-// var fn = (function() {}).reportError();
+```js
+var fn = Hamster.capture(function() {
+  throw new Error();
+});
 ```
+
+_Note: Hamster.capture() will wrap a function when error.stack is supported,
+otherwise it will bypass exception and let window.onerror catch it, so that
+line number and file name could possibly be preserved. Thus Hamster.capture()
+can't guarantee the following statements will be executed._
 
 ### Hamster.onerror(err)
 
@@ -107,188 +111,112 @@ function recurseBack(count) {
     recurseOnOther(count - 1);
 }
 
-try {
-  maybeBroken(false);
-} catch(e) {
-  e.report();
-}
+setTimeout(function() {
+  Hamster.capture(maybeBroken)();
+}, 0);
+
+setTimeout(function() {
+  maybeBroken();
+}, 0);
 
 try {
   eval('maybeBroken(false)');
 } catch(e) {
-  e.report();
+  Hamster.report(e);
 }
-
-maybeBroken(false);
-
 ```
 
 ### caller report
 
+This report is generate when using `Hamster.report()` on a browser without
+Error#stack support.
+
 ```js
-{
-  "type": "caller",
-  "message": "Error caused",
-  "name": "Error",
-  "stack": [
-    {}
-  ],
-  "files": []
-}
+{ type: 'caller',
+  message: 'Error caused',
+  name: 'Error',
+  stack: [ {} ],
+  files: [] }
 // Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)
 ```
 
 ### window report
 
+This report is generate when using `Hamster.capture()` on a browser without
+Error#stack support, you can get at least file name and line number.
+
 ```js
-{
-  "type": "window",
-  "message": "Error caused",
-  "stack": [
-    {
-      "f": 0,
-      "l": 6
-    }
-  ],
-  "files": [
-    "http://radiant-falls-1343.herokuapp.com/javascripts/error.js"
-  ]
-}
-// Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)
+{ type: 'window',
+  message: 'Error caused',
+  stack: [ { f: 0, l: 16 } ],
+  files: [ 'http://radiant-falls-1343.herokuapp.com/javascripts/error.js' ] }
+// Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0; SLCC1; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729)
 ```
 
 ### Error#stack report
 
-```js
-{
-  "type": "error.stack",
-  "message": "Error caused",
-  "name": "Error",
-  "stack": [
-    {
-      "k": "Error",
-      "raw": "Error(\"Error caused\")@:0",
-      "f": 0,
-      "l": 6
-    },
-    {
-      "k": "maybeBroken",
-      "f": 0,
-      "l": 6
-    },
-    {
-      "k": "recurseOnOther",
-      "f": 0,
-      "l": 25
-    },
-    {
-      "k": "recurseBack",
-      "f": 0,
-      "l": 30
-    },
-    {
-      "k": "recurseOnOther",
-      "f": 0,
-      "l": 23
-    },
-    {
-      "k": "recurseSelf",
-      "f": 0,
-      "l": 16
-    },
-    {
-      "k": "recurseSelf",
-      "f": 0,
-      "l": 18
-    },
-    {
-      "k": "goDeep",
-      "f": 0,
-      "l": 11
-    },
-    {
-      "k": "maybeBroken",
-      "f": 0,
-      "l": 7
-    },
-    {
-      "k": "",
-      "f": 0,
-      "l": 34
-    }
-  ],
-  "files": [
-    "http://radiant-falls-1343.herokuapp.com/javascripts/error.js"
-  ]
-}
-// Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17
+This report is generated on a browser with Error#stack support, this could be
+captured via both `Hamster.capture()` and `Hamster.report(e)`, even
+window.onerror could get a report like this (on later version of Firefox and Chrome.)
 
-{
-  "type": "error.stack",
-  "message": "Error caused",
-  "name": "Error",
-  "stack": [
-    {
-      "raw": "Error: Error caused"
-    },
-    {
-      "k": "maybeBroken",
-      "f": 0,
-      "l": 6,
-      "c": 21
-    },
-    {
-      "k": "recurseOnOther",
-      "f": 0,
-      "l": 25,
-      "c": 9
-    },
-    {
-      "k": "recurseBack",
-      "f": 0,
-      "l": 30,
-      "c": 9
-    },
-    {
-      "k": "recurseOnOther",
-      "f": 0,
-      "l": 23,
-      "c": 9
-    },
-    {
-      "k": "recurseSelf",
-      "f": 0,
-      "l": 16,
-      "c": 9
-    },
-    {
-      "k": "recurseSelf",
-      "f": 0,
-      "l": 18,
-      "c": 9
-    },
-    {
-      "k": "goDeep",
-      "f": 0,
-      "l": 11,
-      "c": 5
-    },
-    {
-      "k": "maybeBroken",
-      "f": 0,
-      "l": 7,
-      "c": 10
-    },
-    {
-      "k": "Global code",
-      "f": 0,
-      "l": 34,
-      "c": 5
-    }
-  ],
-  "files": [
-    "http://radiant-falls-1343.herokuapp.com/javascripts/error.js"
-  ]
-}
+```js
+{ type: 'error.stack',
+  message: 'Error caused',
+  name: 'Error',
+  stack:
+  [ { k: 'Error', raw: 'Error("Error caused")@:0', f: 0, l: 16 },
+    { k: 'maybeBroken', f: 0, l: 16 },
+    { k: 'recurseOnOther', f: 0, l: 35 },
+    { k: 'recurseBack', f: 0, l: 40 },
+    { k: 'recurseOnOther', f: 0, l: 33 },
+    { k: 'recurseSelf', f: 0, l: 26 },
+    { k: 'recurseSelf', f: 0, l: 28 },
+    { k: 'goDeep', f: 0, l: 21 },
+    { k: 'maybeBroken', f: 0, l: 17 },
+    { k: '', f: 1, l: 40 },
+    { k: '', f: 0, l: 44 } ],
+  files:
+  [ 'http://radiant-falls-1343.herokuapp.com/javascripts/error.js',
+    'http://radiant-falls-1343.herokuapp.com/javascripts/hamster.js' ] }
+// Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17
+// via Hamster.capture(e);
+
+{ type: 'error.stack',
+  message: 'Error caused',
+  name: 'Error',
+  stack:
+  [ { raw: 'Error: Error caused' },
+    { k: 'maybeBroken', f: 0, l: 16, c: 19 },
+    { k: 'recurseOnOther', f: 0, l: 35, c: 5 },
+    { k: 'recurseBack', f: 0, l: 40, c: 5 },
+    { k: 'recurseOnOther', f: 0, l: 33, c: 5 },
+    { k: 'recurseSelf', f: 0, l: 26, c: 5 },
+    { k: 'recurseSelf', f: 0, l: 28, c: 5 },
+    { k: 'goDeep', f: 0, l: 21, c: 3 },
+    { k: 'maybeBroken', f: 0, l: 17, c: 8 },
+    { k: 'eval code', raw: 'at eval code (eval code:1:1)' },
+    { k: 'Global code', f: 0, l: 51, c: 3 } ],
+  files: [ 'http://radiant-falls-1343.herokuapp.com/javascripts/error.js' ] }
 // Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)
+// via Hamster.report(e);
 ```
+
+## Best Practice
+
+- Using `Hamster.capture()` over your global scope is prefered.
+
+```js
+Hamster.capture(function() {
+
+// global closure
+
+})();
+```
+
+- And always `throw new Error()`, instead of `new Error()`. As IE 10 won't capture
+  call stack until you throw it. Please note that, IE will override Error#stack
+  every time you throw it.
+
+- When uglify/minify your code, set max line length to a value ~80 or less, as
+  not every browser will tell you which column to look at, this will help you
+  to locate function faster.

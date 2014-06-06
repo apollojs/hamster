@@ -1,34 +1,23 @@
-(function(global) {
-global.Hamster = {
-  onerror: function() {}
-};
+(function() {
 Error.stackTraceLimit = 10;
-Error.prototype.report = function() {
-  if (this.stack) {
-    reportError('error.stack', this, normalizeStack(this.stack));
-  } else {
-    // populate error let window.onerror to handle,
-    // thus we can get line no.
-    reportError('caller', this, constructStack());
-  }
-};
-Function.prototype.reportError = function() {
-  var fn = this;
-  return function() {
-    try {
-      return fn.apply(this, arguments);
-    } catch(e) {
-      e.report();
-    };
-  };
+var kSupportErrorStack;
+try {
+  throw new Error();
+} catch(e) {
+  kSupportErrorStack = e.stack !== undefined;
 }
+window.Hamster = {
+  onerror: function() {},
+  report: report,
+  capture: kSupportErrorStack ? capture : noCapture
+};
 window.onerror = function(message, url, line, column, err) {
   if (err) {
-    err.report();
+    report(err);
   } else {
     // this is a unhandled error,
     // only last stack level could be retrieved
-    reportError('window', {
+    generateReport('window', {
       message: message,
       fileName: url,
       lineNumber: line,
@@ -36,7 +25,28 @@ window.onerror = function(message, url, line, column, err) {
     }, []);
   }
 };
-function reportError(type, err, stack) {
+function report(e) {
+  if (e.stack) {
+    generateReport('error.stack', e, normalizeStack(e.stack));
+  } else {
+    // populate error let window.onerror to handle,
+    // thus we can get line no.
+    generateReport('caller', e, constructStack());
+  }
+}
+function capture(fn) {
+  return function() {
+    try {
+      return fn.apply(this, arguments);
+    } catch(e) {
+      report(e);
+    };
+  };
+}
+function noCapture(fn) {
+  return fn;
+}
+function generateReport(type, err, stack) {
   var report = {
     type: type,
     message: err.message || err.description,
@@ -97,7 +107,7 @@ function constructStack() {
   var stack = [];
   var fn = constructStack;
   while ((fn = fn.caller) && stack.length < 10) {
-    if (fn == Error.prototype.report)
+    if (fn == report)
       continue;
     stack.push({
       fn: fn.toString(),
@@ -120,4 +130,4 @@ function indexOf(arr, val) {
       return i;
   return -1;
 }
-})(window);
+})();
