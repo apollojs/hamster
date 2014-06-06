@@ -1,7 +1,8 @@
 # Hamster.js
 
-Hamster is a small independent script that will help you to preserve error stack
-cross browsers, and also capture unexpected error that leaked to window scope.
+Hamster is a small (~1.6kB minified) independent script that will help you to
+preserve error stack cross browsers, and also capture unexpected error that
+leaked to window scope.
 
 Hamster works with IE 8+, Chrome 20+, Firefox 3.6+, Safari 5+ and Opera 11.62+.
 
